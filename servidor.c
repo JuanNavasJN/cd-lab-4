@@ -57,7 +57,7 @@ int main(int argc, char *argv[]){
             return 1;
         }
         printf("\n");
-        printf("Mensaje del servidor: %s\n", buffer);
+        printf("Mensaje del cliente: %s\n", buffer);
         memset(buffer, 0, 500);
     }
     close(new_id);
