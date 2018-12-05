@@ -5,7 +5,7 @@
 #include<stdio.h>	//printf
 #include <stdlib.h>
 #include<unistd.h>    //write
-#include <string.h> 
+#include <string.h>
 
 //#defien PORT 3005
 //#define BACKLOG 2
@@ -13,16 +13,12 @@
 int main (int argc, char *argv[]){
     int id; //Descriptores servidor, cliente
     char buffer[500];
+    char nombre[500];
+    char usuariochat[500];
 
     struct sockaddr_in server; //int servidor
 
     struct hosten *he; // lo necesitare para el nombre de host o la ip
-
-    //Necesario para obtener la ip. Existe otra funcion para esto que quiza necesiten...
-    // if((he=gethostbyname(argv[1])) == NULL){
-    //     printf("error de gethostbyname()\n");
-    //     exit(-1);
-    // }
 
     int port;
     sscanf(argv[2], "%d", &port);
@@ -30,8 +26,6 @@ int main (int argc, char *argv[]){
     //estructura server del SERVIDOR
 
     server.sin_family = AF_INET;
-
-    //server.sin_addr = *((struct in_addr *)he->h_addr);
     server.sin_addr.s_addr = inet_addr(argv[1]);
     server.sin_port = htons(port);// el puerto que usare (el segundo argumento de la llamada)
     bzero(&(server.sin_zero),8);
@@ -50,20 +44,37 @@ int main (int argc, char *argv[]){
 	}
     //puts("Conectado\n");
     // ya en teoria la conexion al server esta hecha
+    printf("Escriba su nombre de usuario:  ");
+    scanf("%s", nombre);
+    send(id, nombre, strlen(nombre) , 0);
 
+  //  strcpy(usuariochat, buffer); RECIBE EL NOMBRE DEL OTRO
+    int first = 1;
     while(1){
-        printf("Escribir mensaje: ");
-        scanf("%s", buffer);
 
-        if( send(id, buffer, strlen(buffer) , 0) < 0){
-            puts("Envio fallido");
-            return 1;
+        memset(buffer, 0, 500);
+
+        recv(id, buffer, 500, 0);
+        //write(id, "", 1);
+
+        if( strcmp(buffer, "") != 0 &&  first == 1){
+            printf("%s se ha conectado\n", buffer);
+            first = 0;
+        }else if(strcmp(buffer, "")){
+            printf("%s\n", buffer);
         }
 
-        if(strcmp(buffer, "EXIT") == 0){
-            close(id);
-            return 1;
-        }
+        // scanf("%s", buffer);
+
+        // if( send(id, buffer, strlen(buffer) , 0) < 0){
+        //     puts("Envio fallido");
+        //     return 1;
+        // }
+
+        // if(strcmp(buffer, "EXIT") == 0){
+        //     close(id);
+        //     return 1;
+        // }
         memset(buffer, 0, 500);
     }
     //write(id, buffer, 100);
