@@ -7,9 +7,6 @@
 #include<unistd.h>    //write
 #include <string.h>
 
-//#defien PORT 3005
-//#define BACKLOG 2
-
 int main (int argc, char *argv[]){
     int id; //Descriptores servidor, cliente
     char buffer[500];
@@ -48,36 +45,35 @@ int main (int argc, char *argv[]){
     scanf("%s", nombre);
     send(id, nombre, strlen(nombre) , 0);
 
-  //  strcpy(usuariochat, buffer); RECIBE EL NOMBRE DEL OTRO
-    int first = 1;
+    printf("Comienza a chatear\n");
+
     while(1){
 
         memset(buffer, 0, 500);
 
-        recv(id, buffer, 500, 0);
-        //write(id, "", 1);
+        printf("<-- ");
 
-        if( strcmp(buffer, "") != 0 &&  first == 1){
-            printf("%s se ha conectado\n", buffer);
-            first = 0;
-        }else if(strcmp(buffer, "")){
-            printf("%s\n", buffer);
+        scanf("%s", buffer);
+
+        if( send(id, buffer, strlen(buffer) , 0) < 0){
+            puts("Envio fallido");
+            return 1;
+        }else{
+             //printf("<-- ");
         }
-
-        // scanf("%s", buffer);
-
-        // if( send(id, buffer, strlen(buffer) , 0) < 0){
-        //     puts("Envio fallido");
-        //     return 1;
-        // }
-
-        // if(strcmp(buffer, "EXIT") == 0){
-        //     close(id);
-        //     return 1;
-        // }
         memset(buffer, 0, 500);
-    }
-    //write(id, buffer, 100);
-    close(id); //Importante cerrar la conexion
+        
+        do{
+            recv(id, buffer, 500, 0);
+        }while(!strcmp(buffer, ""));
+        
+        printf("%s\n", buffer);
 
+        if(strcmp(buffer, "EXIT") == 0){
+            close(id);
+            return 1;
+        }
+        
+    }
+    close(id); //Importante cerrar la conexion
 }
