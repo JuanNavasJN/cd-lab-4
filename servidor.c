@@ -61,19 +61,29 @@ int main(int argc, char *argv[]){
         }
         memset(buffer, 0, 500);
     }
-
+    int rec;
     while(1){
 
-        recv(new_id[0], buffer, 500, 0);
+        rec = recv(new_id[0], buffer, sizeof(buffer), MSG_PEEK);
+
+        // if(rec <= 0){
+        //     printf("%s se ha desconectado\n", usuario1);
+        // }
+        
         sprintf(mensaje, "--> %s dice: %s", usuario1, buffer);
-        send(new_id[1], mensaje, 500, 0);
+        send(new_id[1], mensaje, sizeof(mensaje), 0);
         //printf("enviado a %d\n", new_id[1]);
         memset(buffer, 0, 500);
         memset(mensaje, 0, 700);
 
-        recv(new_id[1], buffer, 500, 0);
+        rec = recv(new_id[1], buffer, sizeof(buffer), MSG_PEEK);
+
+        // if(rec <= 0){
+        //     printf("%s se ha desconectado\n", usuario1);
+        // }
+
         sprintf(mensaje, "--> %s dice: %s", usuario2, buffer);
-        send(new_id[0], mensaje, 500 , 0);
+        send(new_id[0], mensaje, sizeof(mensaje), 0);
         //printf("enviado a %d\n", new_id[0]);
         memset(buffer, 0, 500);
         memset(mensaje, 0, 700);
