@@ -9,7 +9,9 @@
 #include <dirent.h>
 #include <errno.h>
 
-#define LENGTH 3000
+#define LENGTH 1000
+#define LENGTH_NAME 200
+#define LENGTH_BUFFER 500
 
 void listarPropios()
 {
@@ -50,50 +52,54 @@ int solicitarUsername(int id){
     else return 0;
 }
 
-void subirArchivo(int id){
-    /* Send File to Server */
-	//if(!fork())
-	//{
-        int count = 0;
-		char* fs_name = "./client/";
-		char *sdbuf; 
-		printf("[Cliente] Enviando %s al servidor...\n", fs_name);
-		FILE *fs = fopen(fs_name, "r");
-		if(fs == NULL)
-		{
-		    printf("ERROR: File %s not found.\n", fs_name);
-			exit(1);
-		}
+void subirArchivo(int id, char *nombreArchivo){
 
-		bzero(sdbuf, LENGTH); 
-		int fs_block_sz; 
-		//int success = 0;
-		while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs))>0)
-	    {
-	        if(send(id, sdbuf, fs_block_sz, 0) < 0)
-	        {
-	            printf("ERROR: Failed to send file %s.\n", fs_name);
-	            break;
-	        }
-            printf(".");
-	        bzero(sdbuf, LENGTH);
-	    }
-        bzero(sdbuf, LENGTH);
-        sprintf(sdbuf, "%s", "enviado");
-        send(id, sdbuf, sizeof(sdbuf), 0);
-	    printf("\nOk File %s from Client was Sent!\n", fs_name);
+    /* Enviar archivo al servidor */
         
-        //fclose(fs);
-	    //success = 1;
-	//}
+    int count = 0;
+    char fs_name[LENGTH_NAME];
+    char temp[LENGTH_NAME];
+    bzero(temp, LENGTH_NAME);
+    int len = strlen(nombreArchivo);
+    strncpy(temp,nombreArchivo,len-1);
+    send(id, temp, sizeof(temp), 0); // Enviar nombre del archivo
+    
+    sprintf(fs_name, "./client/%s", temp);
+    //char* fs_name = "./client/conest.png";
+    char sdbuf[LENGTH]; 
+    printf("[Cliente] Enviando %s al servidor...\n", fs_name);
 
-    //close(FILE_TO_SEND);
+    FILE *fs = fopen(fs_name, "r");
+    if(fs == NULL)
+    {
+        printf("ERROR: File %s not found.\n", fs_name);
+        exit(1);
+    }
+    bzero(sdbuf, LENGTH); 
+    int fs_block_sz; 
+    //int success = 0;
+
+    while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs))>0)
+    {
+        if(send(id, sdbuf, fs_block_sz, 0) < 0)
+        {
+            printf("ERROR: Failed to send file %s.\n", fs_name);
+            break;
+        }
+        printf(".");
+        bzero(sdbuf, LENGTH);
+    }
+    fclose(fs);
+
+    printf("\nOk Archivo %s ya se envio desde el cliente!\n", fs_name);
+   
 }
 
 void mostrarOpciones(int id){
 
     int opt;
     char nombreArchivo[100];
+    char *optc;
 
     printf("Menu: \n");
     printf(" 1 - Listar mis archivos\n");
@@ -103,8 +109,11 @@ void mostrarOpciones(int id){
     printf("Seleccione una opcion: ");
 
     do{
-        scanf("%d", &opt);
+        fgets(optc, 5, stdin);
+        opt = atoi(optc);
     }while(opt != 1 && opt != 2 && opt != 3 && opt != 4);
+    
+    bzero(optc, 7);
 
     switch(opt){
         case 1:
@@ -118,11 +127,12 @@ void mostrarOpciones(int id){
             printf("----------------------------------\n");
             break;
         case 3:
+            optc = "subir";
+            send(id, optc, sizeof(optc), 0); // Enviar opcion
             printf("----------- Subir archivo --------\n");
-            printf("Ingrese el nombre del archivo\n");
-            //scanf("%s", nombreArchivo);
-
-            subirArchivo(id);
+            printf("Ingrese el nombre del archivo: ");
+            fgets(nombreArchivo, sizeof(nombreArchivo), stdin);
+            subirArchivo(id, nombreArchivo);
             printf("----------------------------------\n");
             break;
         case 4:
@@ -138,9 +148,9 @@ void mostrarOpciones(int id){
 void conectar(char *ip, int port){
 
     int id; //Descriptores servidor, cliente
-    char buffer[500];
-    char nombre[500];
-    char usuariochat[500];
+    char buffer[LENGTH_BUFFER];
+    char nombre[LENGTH_BUFFER];
+    char usuariochat[LENGTH_BUFFER];
 
     struct sockaddr_in server; //int servidor
 
@@ -182,7 +192,7 @@ void conectar(char *ip, int port){
 
     while(1){
 
-        memset(buffer, 0, 500);
+        bzero(buffer, LENGTH_BUFFER);
 
         printf("<-- \n");
 
@@ -195,8 +205,8 @@ void conectar(char *ip, int port){
         }else{
              //printf("<-- ");
         }
-        memset(buffer, 0, 500);
-        
+        bzero(buffer, LENGTH_BUFFER); 
+
         do{
             recv(id, buffer, 500, 0);
         }while(!strcmp(buffer, ""));
