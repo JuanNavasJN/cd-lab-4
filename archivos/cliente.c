@@ -9,7 +9,7 @@
 #include <dirent.h>
 #include <errno.h>
 
-#define LENGTH 1000
+#define LENGTH 8000
 #define LENGTH_NAME 200
 #define LENGTH_BUFFER 500
 
@@ -52,10 +52,63 @@ int solicitarUsername(int id){
     else return 0;
 }
 
-void subirArchivo(int id, char *nombreArchivo){
+void recibirArchivo(int id, char *nombreArchivo){
 
+    printf("Descargando...\n");
+    // Envia nombre del archivo a descargar
+    char temp[LENGTH_NAME];
+    bzero(temp, LENGTH_NAME);
+    int len = strlen(nombreArchivo);
+    strncpy(temp,nombreArchivo,len-1);
+    send(id, temp, sizeof(temp), 0); // Enviar nombre del archivo
+
+    /*Recibe archivo desde el cliente */
+    char revbuf[LENGTH]; // Receiver buffer
+    char fr_name[LENGTH_NAME];
+    sprintf(fr_name, "./client/%s", temp);
+    
+    FILE *fr = fopen(fr_name, "a");
+    if(fr == NULL)
+        printf("File %s Cannot be opened file on client.\n", fr_name);
+    else
+    {
+        bzero(revbuf, LENGTH); 
+        int fr_block_sz = 0;
+        //int success = 0;
+        //while(success == 0)
+        //{
+            while((fr_block_sz = recv(id, revbuf, LENGTH, 0)) > 0) //could it be sockfd?
+            {
+                // if(strcmp(revbuf, "enviado") == 0){
+                //     break;
+                // }
+                if(fr_block_sz < 0)
+                {
+                    perror("Error receiving file from client to server.\n");
+                    break;
+                }
+                int write_sz = fwrite(revbuf, sizeof(char), fr_block_sz, fr);
+                if(write_sz < fr_block_sz)
+                {
+                    perror("File write failed on server.\n");
+                    break;
+                }
+                // else if(fr_block_sz)
+                // {
+                // 	break;
+                // }
+                //printf(".%d", fr_block_sz);
+                if(fr_block_sz < LENGTH ) break;
+                bzero(revbuf, LENGTH);
+            }
+            printf("Ok archivo descargado!\n");
+            fclose(fr);
+        //}
+    }
+}
+
+void enviarArchivo(int id, char *nombreArchivo){
     /* Enviar archivo al servidor */
-        
     int count = 0;
     char fs_name[LENGTH_NAME];
     char temp[LENGTH_NAME];
@@ -79,20 +132,26 @@ void subirArchivo(int id, char *nombreArchivo){
     int fs_block_sz; 
     //int success = 0;
 
-    while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs))>0)
+    while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs)) > 0)
     {
+        printf(".");
         if(send(id, sdbuf, fs_block_sz, 0) < 0)
         {
             printf("ERROR: Failed to send file %s.\n", fs_name);
             break;
         }
-        printf(".");
         bzero(sdbuf, LENGTH);
     }
     fclose(fs);
 
+    // bzero(sdbuf, LENGTH);
+    // sprintf(sdbuf, "%s", "enviado");
+
+    // if(send(id, sdbuf, strlen(sdbuf), 0) <= 0){
+    //     perror("Error enviado\n");
+    // };
+
     printf("\nOk Archivo %s ya se envio desde el cliente!\n", fs_name);
-   
 }
 
 void mostrarOpciones(int id){
@@ -130,13 +189,19 @@ void mostrarOpciones(int id){
             optc = "subir";
             send(id, optc, sizeof(optc), 0); // Enviar opcion
             printf("----------- Subir archivo --------\n");
-            printf("Ingrese el nombre del archivo: ");
+            printf("Ingrese el nombre del archivo a subir: ");
             fgets(nombreArchivo, sizeof(nombreArchivo), stdin);
-            subirArchivo(id, nombreArchivo);
+            enviarArchivo(id, nombreArchivo);
             printf("----------------------------------\n");
             break;
         case 4:
-            printf("Descargar\n");
+            optc = "bajar";
+            send(id, optc, sizeof(optc), 0); // Enviar opcion
+            printf("----------- Descargar archivo --------\n");
+            printf("Ingrese el nombre del archivo a descargar: ");
+            fgets(nombreArchivo, sizeof(nombreArchivo), stdin);
+            recibirArchivo(id, nombreArchivo);
+            printf("----------------------------------\n");
             break;
         default:
             printf("Opcion invalida\n");

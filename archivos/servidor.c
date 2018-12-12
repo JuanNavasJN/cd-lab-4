@@ -6,26 +6,25 @@
 #include <netdb.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define BACKLOG 3
-#define LENGTH 1000
+#define LENGTH 8000
 #define LENGTH_BUFFER 500
 #define LENGTH_MENSAJE 700
-#define LENGTH_FILE 200
+#define LENGTH_NAME 200
 
 
 void recibirArchivo(int id){
-
     // Recibe nombre del archivo
-    char fs_name[LENGTH_FILE];
-    bzero(fs_name, LENGTH_FILE);
+    char fs_name[LENGTH_NAME];
+    bzero(fs_name, LENGTH_NAME);
     if(recv(id, fs_name, sizeof(fs_name), 0) < 0){
             perror("Error recibiendo nombre de archivo\n");
     };
-    
     /*Recibe archivo desde el cliente */
     char revbuf[LENGTH]; // Receiver buffer
-    char fr_name[LENGTH_FILE];
+    char fr_name[LENGTH_NAME];
     sprintf(fr_name, "./server/%s", fs_name);
     
     FILE *fr = fopen(fr_name, "a");
@@ -38,32 +37,82 @@ void recibirArchivo(int id){
         //int success = 0;
         //while(success == 0)
         //{
-            while(fr_block_sz = recv(id, revbuf, LENGTH, 0)) //could it be sockfd?
+            while((fr_block_sz = recv(id, revbuf, LENGTH, 0)) > 0) //could it be sockfd?
             {
-                if(strcmp(revbuf, "enviado") == 0){
-                    break;
-                }
+                // if(strcmp(revbuf, "enviado") == 0){
+                //     break;
+                // }
                 if(fr_block_sz < 0)
                 {
                     perror("Error receiving file from client to server.\n");
+                    break;
                 }
                 int write_sz = fwrite(revbuf, sizeof(char), fr_block_sz, fr);
                 if(write_sz < fr_block_sz)
                 {
                     perror("File write failed on server.\n");
+                    break;
                 }
-                else if(fr_block_sz)
-                {
-                	break;
-                }
+                // else if(fr_block_sz)
+                // {
+                // 	break;
+                // }
+                //printf(".%d", fr_block_sz);
+                if(fr_block_sz < LENGTH ) break;
                 bzero(revbuf, LENGTH);
-
             }
-            printf("Ok archivo recibido!\n");
+            printf("Ok archivo subido!\n");
             fclose(fr);
         //}
     }
 }
+void enviarArchivo(int id){
+    // Recibe nombre del archivo
+    char fs_name[LENGTH_NAME];
+    char temp[LENGTH_NAME];
+    bzero(fs_name, LENGTH_NAME);
+    bzero(temp, LENGTH_NAME);
+    if(recv(id, temp, sizeof(temp), 0) < 0){
+            perror("Error recibiendo nombre de archivo\n");
+    };
+   
+    sprintf(fs_name, "./server/%s", temp);
+    //char* fs_name = "./client/conest.png";
+    char sdbuf[LENGTH]; 
+    printf("[Cliente] Enviando %s al cliente...\n", fs_name);
+
+    FILE *fs = fopen(fs_name, "r");
+    if(fs == NULL)
+    {
+        printf("ERROR: File %s not found.\n", fs_name);
+        exit(1);
+    }
+    bzero(sdbuf, LENGTH); 
+    int fs_block_sz; 
+    //int success = 0;
+
+    while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs)) > 0)
+    {
+        printf(".");
+        if(send(id, sdbuf, fs_block_sz, 0) < 0)
+        {
+            printf("ERROR: Failed to send file %s.\n", fs_name);
+            break;
+        }
+        bzero(sdbuf, LENGTH);
+    }
+    fclose(fs);
+
+    // bzero(sdbuf, LENGTH);
+    // sprintf(sdbuf, "%s", "enviado");
+
+    // if(send(id, sdbuf, strlen(sdbuf), 0) <= 0){
+    //     perror("Error enviado\n");
+    // };
+
+    printf("\nOk Archivo %s ya se envio desde el servidor!\n", fs_name);
+}
+
 
 int main(int argc, char *argv[]){
 
@@ -116,7 +165,12 @@ int main(int argc, char *argv[]){
         if(strcmp(buffer, "subir") == 0){
             printf("Esperando archivo...\n");
             recibirArchivo(new_id[0]);
+        }else if(strcmp(buffer, "bajar") == 0){
+            printf("Preparando archivo...\n");
+            enviarArchivo(new_id[0]);
         }
+        close(new_id[0]);
+        exit(0);
     }
 
     // printf("A recibir...\n");
