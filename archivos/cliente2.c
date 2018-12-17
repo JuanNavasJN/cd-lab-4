@@ -353,8 +353,8 @@ int main (int argc, char *argv[]){
                 printf("----------------------------------\n");
                 break;
             case 5:
-                strncpy(optc,"chat",4);
-                send(client_write_t.sockfd, optc, 4, 0); // Enviar opcion
+              //  strncpy(optc,"chat",4);
+              //  send(client_write_t.sockfd, optc, 4, 0); // Enviar opcion
 
                 printf("Escriba su nombre de usuario: \n");
                 fgets(nombre,500,stdin);
@@ -376,6 +376,7 @@ int main (int argc, char *argv[]){
                 pthread_create(&client_read_t.tid, &client_read_t.attr, client_runner_fun, &client_read_t);
                 pthread_join(client_write_t.tid, NULL);
                 pthread_join(client_read_t.tid, NULL);
+
 
                 break;
             default:
