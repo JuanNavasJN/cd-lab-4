@@ -9,7 +9,7 @@
 #include <dirent.h>
 #include <errno.h>
 
-#define LENGTH 8000
+#define LENGTH 2000
 #define LENGTH_NAME 200
 #define LENGTH_BUFFER 500
 
@@ -53,23 +53,35 @@ int solicitarUsername(int id){
 }
 
 void recibirArchivo(int id, char *nombreArchivo){
-
-    printf("Descargando...\n");
+    
     // Envia nombre del archivo a descargar
     char temp[LENGTH_NAME];
     bzero(temp, LENGTH_NAME);
     int len = strlen(nombreArchivo);
     strncpy(temp,nombreArchivo,len-1);
     send(id, temp, sizeof(temp), 0); // Enviar nombre del archivo
+    float count = 0;
+    char status[1];
+
+    // recv(id, status, sizeof(status), 0);
+    // if(strcmp(status, "1") == 0){
+    //     printf("Descargando...\n");
+    // }else{
+    //     printf("\nArchivo no existe en el servidor\n");
+    //     return;
+    // }
 
     /*Recibe archivo desde el cliente */
     char revbuf[LENGTH]; // Receiver buffer
-    char fr_name[LENGTH_NAME];
+    char fr_name[LENGTH_NAME + 10];
     sprintf(fr_name, "./client/%s", temp);
     
     FILE *fr = fopen(fr_name, "a");
-    if(fr == NULL)
+    if(fr == NULL){
         printf("File %s Cannot be opened file on client.\n", fr_name);
+        return;
+    }
+        
     else
     {
         bzero(revbuf, LENGTH); 
@@ -77,6 +89,7 @@ void recibirArchivo(int id, char *nombreArchivo){
         //int success = 0;
         //while(success == 0)
         //{
+            count = 0;
             while((fr_block_sz = recv(id, revbuf, LENGTH, 0)) > 0) //could it be sockfd?
             {
                 // if(strcmp(revbuf, "enviado") == 0){
@@ -97,7 +110,9 @@ void recibirArchivo(int id, char *nombreArchivo){
                 // {
                 // 	break;
                 // }
-                //printf(".%d", fr_block_sz);
+                count += fr_block_sz;
+                printf("%f KB descargados\n", count/1000);
+
                 if(fr_block_sz < LENGTH ) break;
                 bzero(revbuf, LENGTH);
             }
@@ -109,8 +124,8 @@ void recibirArchivo(int id, char *nombreArchivo){
 
 void enviarArchivo(int id, char *nombreArchivo){
     /* Enviar archivo al servidor */
-    int count = 0;
-    char fs_name[LENGTH_NAME];
+    float count = 0;
+    char fs_name[LENGTH_NAME + 10];
     char temp[LENGTH_NAME];
     bzero(temp, LENGTH_NAME);
     int len = strlen(nombreArchivo);
@@ -119,74 +134,70 @@ void enviarArchivo(int id, char *nombreArchivo){
     
     sprintf(fs_name, "./client/%s", temp);
     //char* fs_name = "./client/conest.png";
-    char sdbuf[LENGTH]; 
+    char sdbuf[LENGTH + 10]; 
     printf("[Cliente] Enviando %s al servidor...\n", fs_name);
 
     FILE *fs = fopen(fs_name, "r");
     if(fs == NULL)
     {
         printf("ERROR: File %s not found.\n", fs_name);
-        exit(1);
+        return;
     }
     bzero(sdbuf, LENGTH); 
     int fs_block_sz; 
     //int success = 0;
-
+    count = 0;
     while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs)) > 0)
     {
-        printf(".");
         if(send(id, sdbuf, fs_block_sz, 0) < 0)
         {
             printf("ERROR: Failed to send file %s.\n", fs_name);
             break;
         }
+        count += fs_block_sz;
+        printf("%f KB subidos\n", count/1000);
         bzero(sdbuf, LENGTH);
     }
     fclose(fs);
 
-    // bzero(sdbuf, LENGTH);
-    // sprintf(sdbuf, "%s", "enviado");
+    bzero(sdbuf, LENGTH);
+    sprintf(sdbuf, "%s", "enviado");
 
-    // if(send(id, sdbuf, strlen(sdbuf), 0) <= 0){
-    //     perror("Error enviado\n");
-    // };
+    if(send(id, sdbuf, strlen(sdbuf), 0) <= 0){
+        perror("Error enviado\n");
+    };
 
     printf("\nOk Archivo %s ya se envio desde el cliente!\n", fs_name);
 }
 
 void mostrarOpciones(int id){
-
     int opt;
     char nombreArchivo[100];
-    char *optc;
+    char optc[10];
 
     printf("Menu: \n");
-    printf(" 1 - Listar mis archivos\n");
-    printf(" 2 - Listar archivos del servidor\n");
-    printf(" 3 - Subir archivos\n");
-    printf(" 4 - Descargar archivos\n");
+    printf(" 1 - Chat room\n");
+    printf(" 2 - Subir archivos\n");
+    printf(" 3 - Descargar archivos\n");
+    printf(" 4 - Listar mis archivos\n");
+    printf(" 5 - Listar archivos del servidor\n");
     printf("Seleccione una opcion: ");
 
     do{
-        fgets(optc, 5, stdin);
+        fgets(optc, 10, stdin);
         opt = atoi(optc);
-    }while(opt != 1 && opt != 2 && opt != 3 && opt != 4);
+    }while(opt != 1 && opt != 2 && opt != 3 && opt != 4 && opt != 5);
     
-    bzero(optc, 7);
+    bzero(optc, 10);
+    bzero(nombreArchivo, sizeof(nombreArchivo));
 
     switch(opt){
-        case 1:
-            printf("---------- Mis archivos --------------\n");
-            listarPropios();
-            printf("---------------------------------------\n");
+
+        case 1: 
+            printf("----------- Chat room --------\n");
             break;
         case 2:
-            printf("---------- Servidor --------------\n");
-            listarServidor();
-            printf("----------------------------------\n");
-            break;
-        case 3:
-            optc = "subir";
+            sprintf(optc, "subir");
             send(id, optc, sizeof(optc), 0); // Enviar opcion
             printf("----------- Subir archivo --------\n");
             printf("Ingrese el nombre del archivo a subir: ");
@@ -194,8 +205,8 @@ void mostrarOpciones(int id){
             enviarArchivo(id, nombreArchivo);
             printf("----------------------------------\n");
             break;
-        case 4:
-            optc = "bajar";
+        case 3:
+            sprintf(optc, "bajar");
             send(id, optc, sizeof(optc), 0); // Enviar opcion
             printf("----------- Descargar archivo --------\n");
             printf("Ingrese el nombre del archivo a descargar: ");
@@ -203,11 +214,20 @@ void mostrarOpciones(int id){
             recibirArchivo(id, nombreArchivo);
             printf("----------------------------------\n");
             break;
+        case 4:
+            printf("---------- Listar mis archivos --------------\n");
+            listarPropios();
+            printf("---------------------------------------\n");
+            break;
+        case 5:
+            printf("---------- Listar archivos del servidor --------------\n");
+            listarServidor();
+            printf("----------------------------------\n");
+            break;
         default:
             printf("Opcion invalida\n");
             break;
     }
-
 }
 
 void conectar(char *ip, int port){

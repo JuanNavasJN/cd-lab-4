@@ -9,13 +9,13 @@
 #include <stdlib.h>
 
 #define BACKLOG 3
-#define LENGTH 8000
+#define LENGTH 2000
 #define LENGTH_BUFFER 500
 #define LENGTH_MENSAJE 700
 #define LENGTH_NAME 200
 
 
-void recibirArchivo(int id){
+int recibirArchivo(int id){
     // Recibe nombre del archivo
     char fs_name[LENGTH_NAME];
     bzero(fs_name, LENGTH_NAME);
@@ -24,12 +24,15 @@ void recibirArchivo(int id){
     };
     /*Recibe archivo desde el cliente */
     char revbuf[LENGTH]; // Receiver buffer
-    char fr_name[LENGTH_NAME];
+    char fr_name[LENGTH_NAME + 10];
     sprintf(fr_name, "./server/%s", fs_name);
     
     FILE *fr = fopen(fr_name, "a");
-    if(fr == NULL)
+    if(fr == NULL){
         printf("File %s Cannot be opened file on server.\n", fr_name);
+        return 0; 
+    }
+        
     else
     {
         bzero(revbuf, LENGTH); 
@@ -53,24 +56,25 @@ void recibirArchivo(int id){
                     perror("File write failed on server.\n");
                     break;
                 }
-                // else if(fr_block_sz)
+                // else if(fr_block_sz == 0)
                 // {
                 // 	break;
                 // }
-                //printf(".%d", fr_block_sz);
-                if(fr_block_sz < LENGTH ) break;
+                printf("%d\n", fr_block_sz);
+                if(fr_block_sz < LENGTH &&  fr_block_sz > 0) break;
                 bzero(revbuf, LENGTH);
             }
             printf("Ok archivo subido!\n");
             fclose(fr);
+            return 1;
         //}
     }
 }
-void enviarArchivo(int id){
+int enviarArchivo(int id){
     // Recibe nombre del archivo
-    char fs_name[LENGTH_NAME];
+    char fs_name[LENGTH_NAME + 10];
     char temp[LENGTH_NAME];
-    bzero(fs_name, LENGTH_NAME);
+    bzero(fs_name, LENGTH_NAME + 10);
     bzero(temp, LENGTH_NAME);
     if(recv(id, temp, sizeof(temp), 0) < 0){
             perror("Error recibiendo nombre de archivo\n");
@@ -80,20 +84,26 @@ void enviarArchivo(int id){
     //char* fs_name = "./client/conest.png";
     char sdbuf[LENGTH]; 
     printf("[Cliente] Enviando %s al cliente...\n", fs_name);
-
+    char status[2];
     FILE *fs = fopen(fs_name, "r");
     if(fs == NULL)
     {
         printf("ERROR: File %s not found.\n", fs_name);
-        exit(1);
+        //sprintf(status, "0");
+        //send(id, status, sizeof(status), 0);
+        return 0;
     }
+    // else{
+    //     sprintf(status, "1");
+    //     send(id, status, sizeof(status), 0);
+    // }
     bzero(sdbuf, LENGTH); 
     int fs_block_sz; 
     //int success = 0;
 
     while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs)) > 0)
     {
-        printf(".");
+        //printf(".");
         if(send(id, sdbuf, fs_block_sz, 0) < 0)
         {
             printf("ERROR: Failed to send file %s.\n", fs_name);
@@ -111,6 +121,7 @@ void enviarArchivo(int id){
     // };
 
     printf("\nOk Archivo %s ya se envio desde el servidor!\n", fs_name);
+    return 1;
 }
 
 
@@ -155,11 +166,17 @@ int main(int argc, char *argv[]){
         printf("Se obtuvo una conexion desde %s\n", inet_ntoa(client[i].sin_addr)); // Asi se obtiene informacion de red del cliente, podrian aplicar otra cosa
     }
     bzero(buffer, LENGTH_BUFFER);
-
+    int status;
     while(1){
 
-        if(recv(new_id[0], buffer, sizeof(buffer), 0) < 0){
+       // printf("Esperando opcion...\n");
+        bzero(buffer, sizeof(buffer));
+
+        status = recv(new_id[0], buffer, sizeof(buffer), 0);
+       // printf("%d\n", status);
+        if( status <= 0){
             perror("Error recibiendo opcion\n");
+            break;
         };
 
         if(strcmp(buffer, "subir") == 0){
@@ -169,8 +186,8 @@ int main(int argc, char *argv[]){
             printf("Preparando archivo...\n");
             enviarArchivo(new_id[0]);
         }
-        close(new_id[0]);
-        exit(0);
+        // close(new_id[0]);
+        // exit(0);
     }
 
     // printf("A recibir...\n");
