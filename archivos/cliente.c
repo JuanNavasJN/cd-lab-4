@@ -181,11 +181,7 @@ void enviarArchivo(int id, char *nombreArchivo){
 
     sprintf(fs_name, "./client/%s", temp);
     //char* fs_name = "./client/conest.png";
-<<<<<<< HEAD
     char sdbuf[LENGTH + 10]; 
-=======
-    char sdbuf[LENGTH];
->>>>>>> 40118d2f7675c6f9048e4f66793c3687c7346c3a
     printf("[Cliente] Enviando %s al servidor...\n", fs_name);
 
     FILE *fs = fopen(fs_name, "r");
@@ -221,44 +217,26 @@ void enviarArchivo(int id, char *nombreArchivo){
     printf("\nOk Archivo %s ya se envio desde el cliente!\n", fs_name);
 }
 
-<<<<<<< HEAD
 void mostrarOpciones(int id){
-=======
-/*void mostrarOpciones(int id){
-
->>>>>>> 40118d2f7675c6f9048e4f66793c3687c7346c3a
     int opt;
     char nombreArchivo[100];
     char optc[10];
 
     printf("Menu: \n");
-<<<<<<< HEAD
     printf(" 1 - Chat room\n");
     printf(" 2 - Subir archivos\n");
     printf(" 3 - Descargar archivos\n");
     printf(" 4 - Listar mis archivos\n");
     printf(" 5 - Listar archivos del servidor\n");
-=======
-    printf(" 1 - Listar mis archivos\n");
-    printf(" 2 - Listar archivos del servidor\n");
-    printf(" 3 - Subir archivos\n");
-    printf(" 4 - Descargar archivos\n");
-    printf(" 5 - Chat online\n");
->>>>>>> 40118d2f7675c6f9048e4f66793c3687c7346c3a
     printf("Seleccione una opcion: ");
 
     do{
         fgets(optc, 10, stdin);
         opt = atoi(optc);
     }while(opt != 1 && opt != 2 && opt != 3 && opt != 4 && opt != 5);
-<<<<<<< HEAD
     
     bzero(optc, 10);
     bzero(nombreArchivo, sizeof(nombreArchivo));
-=======
-
-    bzero(optc, 7);
->>>>>>> 40118d2f7675c6f9048e4f66793c3687c7346c3a
 
     switch(opt){
 
@@ -283,7 +261,6 @@ void mostrarOpciones(int id){
             recibirArchivo(id, nombreArchivo);
             printf("----------------------------------\n");
             break;
-<<<<<<< HEAD
         case 4:
             printf("---------- Listar mis archivos --------------\n");
             listarPropios();
@@ -293,12 +270,6 @@ void mostrarOpciones(int id){
             printf("---------- Listar archivos del servidor --------------\n");
             listarServidor();
             printf("----------------------------------\n");
-=======
-        case 5:
-            optc = "chat";
-            send(id, optc, sizeof(optc), 0); // Enviar opcion
-
->>>>>>> 40118d2f7675c6f9048e4f66793c3687c7346c3a
             break;
         default:
             printf("Opcion invalida\n");
