@@ -9,7 +9,7 @@
 #include <pthread.h>
 #include <dirent.h>
 
-#define LENGTH 2000
+#define LENGTH 10000
 #define LENGTH_NAME 200
 #define LENGTH_BUFFER 500
 
@@ -159,6 +159,7 @@ void recibirArchivo(int id, char *nombreArchivo){
 
                 if(fr_block_sz < LENGTH ) break;
                 bzero(revbuf, LENGTH);
+                usleep(10);
             }
             printf("Ok archivo descargado!\n");
             fclose(fr);
@@ -201,6 +202,7 @@ void enviarArchivo(int id, char *nombreArchivo){
         count += fs_block_sz;
         printf("%f KB subidos\n", count/1000);
         bzero(sdbuf, LENGTH);
+        usleep(10);
     }
     fclose(fs);
 

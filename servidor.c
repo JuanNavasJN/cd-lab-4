@@ -9,7 +9,7 @@
 #include <pthread.h>
 
 #define BACKLOG 3
-#define LENGTH 2000
+#define LENGTH 10000
 #define LENGTH_BUFFER 500
 #define LENGTH_MENSAJE 700
 #define LENGTH_NAME 200
@@ -101,6 +101,7 @@ int recibirArchivo(int id){
         //{
             while((fr_block_sz = recv(id, revbuf, LENGTH, 0)) > 0) //could it be sockfd?
             {
+                //usleep(10);
                 // if(strcmp(revbuf, "enviado") == 0){
                 //     break;
                 // }
@@ -119,9 +120,10 @@ int recibirArchivo(int id){
                 // {
                 // 	break;
                 // }
-                printf("%d\n", fr_block_sz);
+                //printf("%d\n", fr_block_sz);
                 if(fr_block_sz < LENGTH &&  fr_block_sz > 0) break;
                 bzero(revbuf, LENGTH);
+                usleep(10);
             }
             printf("Ok archivo subido!\n");
             fclose(fr);
@@ -142,7 +144,7 @@ int enviarArchivo(int id){
     sprintf(fs_name, "./server/%s", temp);
     //char* fs_name = "./client/conest.png";
     char sdbuf[LENGTH]; 
-    printf("[Cliente] Enviando %s al cliente...\n", fs_name);
+    printf("[Servidor] Enviando %s al cliente...\n", fs_name);
     char status[2];
     FILE *fs = fopen(fs_name, "r");
     if(fs == NULL)
@@ -169,6 +171,7 @@ int enviarArchivo(int id){
             break;
         }
         bzero(sdbuf, LENGTH);
+        usleep(10);
     }
     fclose(fs);
 
