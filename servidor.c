@@ -7,6 +7,7 @@
 #include <unistd.h>    //write
 #include <string.h>
 #include <pthread.h>
+#include <dirent.h>
 
 #define BACKLOG 3
 #define LENGTH 10000
@@ -131,7 +132,8 @@ int recibirArchivo(int id){
         //}
     }
 }
-int enviarArchivo(int id){
+
+int enviarArchivo1(int id){
     // Recibe nombre del archivo
     char fs_name[LENGTH_NAME + 10];
     char temp[LENGTH_NAME];
@@ -141,6 +143,21 @@ int enviarArchivo(int id){
             perror("Error recibiendo nombre de archivo\n");
     };
    
+    enviarArchivo2(id, fs_name, temp);
+
+    // bzero(sdbuf, LENGTH);
+    // sprintf(sdbuf, "%s", "enviado");
+
+    // if(send(id, sdbuf, strlen(sdbuf), 0) <= 0){
+    //     perror("Error enviado\n");
+    // };
+
+    
+    return 1;
+}
+
+int enviarArchivo2(int id, char *fs_name, char * temp){
+
     sprintf(fs_name, "./server/%s", temp);
     //char* fs_name = "./client/conest.png";
     char sdbuf[LENGTH]; 
@@ -175,16 +192,34 @@ int enviarArchivo(int id){
     }
     fclose(fs);
 
-    // bzero(sdbuf, LENGTH);
-    // sprintf(sdbuf, "%s", "enviado");
-
-    // if(send(id, sdbuf, strlen(sdbuf), 0) <= 0){
-    //     perror("Error enviado\n");
-    // };
-
     printf("\nOk Archivo %s ya se envio desde el servidor!\n", fs_name);
+
     return 1;
 }
+
+void enviarArchivos(int id){
+
+    DIR *d;
+    struct dirent *dir;
+    d = opendir("./server/");
+    char fs_name[110];
+
+    if (d)
+    {
+        while ((dir = readdir(d)) != NULL)
+        {
+            if(strcmp(dir->d_name, ".") && strcmp(dir->d_name, "..") ){
+
+                //sprintf(fs_name, "./server/%s", dir->d_name);
+                //remove(fs_name);
+                enviarArchivo2(id, fs_name, dir->d_name);
+
+            }
+        }
+        closedir(d);
+    }
+}
+
 
 int chatRoom(){
   // printf("En el chat room: %d, %d\n", server_write_t.newsockfd, server_write_t.newsockfd2);
@@ -255,7 +290,10 @@ void *options(void *arg){
             recibirArchivo(id);
         }else if(strcmp(buffer, "bajar") == 0){
             printf("Preparando archivo...\n");
-            enviarArchivo(id);
+            enviarArchivo1(id);
+        }else if(strcmp(buffer, "descargar") == 0){
+            printf("Preparando archivos...\n");
+            enviarArchivos(id);
         }else if(strcmp(buffer, "chat") == 0){
            printf("Chat room...\n");
            //chatRoom();

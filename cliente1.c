@@ -27,6 +27,7 @@ void error(char *msg){
         perror(msg);
         exit(1);
 }
+
 void listarPropios()
 {
     DIR *d;
@@ -106,14 +107,6 @@ void recibirArchivo(int id, char *nombreArchivo){
     float count = 0;
     char status[1];
 
-    // recv(id, status, sizeof(status), 0);
-    // if(strcmp(status, "1") == 0){
-    //     printf("Descargando...\n");
-    // }else{
-    //     printf("\nArchivo no existe en el servidor\n");
-    //     return;
-    // }
-
     /*Recibe archivo desde el cliente */
     char revbuf[LENGTH]; // Receiver buffer
     char fr_name[LENGTH_NAME + 10];
@@ -129,15 +122,11 @@ void recibirArchivo(int id, char *nombreArchivo){
     {
         bzero(revbuf, LENGTH); 
         int fr_block_sz = 0;
-        //int success = 0;
-        //while(success == 0)
-        //{
+       
             count = 0;
             while((fr_block_sz = recv(id, revbuf, LENGTH, 0)) > 0) //could it be sockfd?
             {
-                // if(strcmp(revbuf, "enviado") == 0){
-                //     break;
-                // }
+                
                 if(fr_block_sz < 0)
                 {
                     perror("Error receiving file from client to server.\n");
@@ -149,10 +138,7 @@ void recibirArchivo(int id, char *nombreArchivo){
                     perror("File write failed on server.\n");
                     break;
                 }
-                // else if(fr_block_sz)
-                // {
-                // 	break;
-                // }
+                
                 count += fr_block_sz;
                 printf("%f KB descargados\n", count/1000);
 
@@ -162,7 +148,6 @@ void recibirArchivo(int id, char *nombreArchivo){
             }
             printf("Ok archivo descargado!\n");
             fclose(fr);
-        //}
     }
 }
 
@@ -246,24 +231,65 @@ void runChat(){
     pthread_join(client_read_t.tid, NULL);
 }
 
+void eliminarArchivo(int id, char *nombreArchivo){
+
+    char fs_name[110];
+    char temp[110];
+    bzero(temp, 110);
+    strncpy(temp, nombreArchivo, strlen(nombreArchivo) - 1);
+    sprintf(fs_name, "./client1/%s", temp);
+    int status;
+    status = remove(fs_name);
+
+    if(status == 0){
+        printf("Archivo eliminado!\n");
+    }else{
+        printf("Error al eliminar archivo!\n");
+    }
+}
+
+void eliminarArchivos(){
+
+    DIR *d;
+    struct dirent *dir;
+    d = opendir("./client1/");
+    char fs_name[110];
+
+    if (d)
+    {
+        while ((dir = readdir(d)) != NULL)
+        {
+            if(strcmp(dir->d_name, ".") && strcmp(dir->d_name, "..") ){
+
+                sprintf(fs_name, "./client1/%s", dir->d_name);
+                remove(fs_name);
+
+            }
+        }
+        closedir(d);
+    }
+}
 
 int mostrarOpciones(int id){
     int opt;
     char nombreArchivo[100];
     char optc[10];
-    printf("%d\n", id);
+    printf("-----------------------------------\n");
     printf("Menu: \n");
     printf(" 1 - Chat room\n");
     printf(" 2 - Subir archivos\n");
     printf(" 3 - Descargar archivos\n");
     printf(" 4 - Listar mis archivos\n");
     printf(" 5 - Listar archivos del servidor\n");
+    printf(" 6 - Eliminar archivo\n");
+    printf(" 7 - Sincronizar\n");
+    printf(" 8 - Salir\n");
     printf("Seleccione una opcion: ");
 
     do{
         fgets(optc, 10, stdin);
         opt = atoi(optc);
-    }while(opt != 1 && opt != 2 && opt != 3 && opt != 4 && opt != 5);
+    }while(opt != 1 && opt != 2 && opt != 3 && opt != 4 && opt != 5  && opt != 6  && opt != 7  && opt != 8);
     
     bzero(optc, 10);
     bzero(nombreArchivo, sizeof(nombreArchivo));
@@ -304,6 +330,20 @@ int mostrarOpciones(int id){
             listarServidor();
             printf("----------------------------------\n");
             break;
+        case 6:
+            printf("----------- Eliminar archivo --------\n");
+            printf("Ingrese el nombre del archivo a eliminar: ");
+            fgets(nombreArchivo, sizeof(nombreArchivo), stdin);
+            eliminarArchivo(id, nombreArchivo);
+            printf("----------------------------------\n");
+            break;
+        case 7:
+            eliminarArchivos();
+            sprintf(optc, "descargar");
+            send(id, optc, sizeof(optc), 0); // Enviar opcion
+            break;
+        case 8:
+            exit(1);
         default:
             printf("Opcion invalida\n");
             break;

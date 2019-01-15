@@ -245,6 +245,23 @@ void runChat(){
     pthread_join(client_read_t.tid, NULL);
 }
 
+void eliminarArchivo(int id, char *nombreArchivo){
+
+    char fs_name[110];
+    char temp[110];
+    bzero(temp, 110);
+    strncpy(temp, nombreArchivo, strlen(nombreArchivo) - 1);
+    sprintf(fs_name, "./client2/%s", temp);
+    int status;
+    status = remove(fs_name);
+
+    if(status == 0){
+        printf("Archivo eliminado!\n");
+    }else{
+        printf("Error al eliminar archivo!\n");
+    }
+}
+
 
 int mostrarOpciones(int id){
     int opt;
@@ -258,12 +275,15 @@ int mostrarOpciones(int id){
     printf(" 3 - Descargar archivos\n");
     printf(" 4 - Listar mis archivos\n");
     printf(" 5 - Listar archivos del servidor\n");
+    printf(" 6 - Eliminar archivo\n");
+    printf(" 7 - Sincronizar\n");
+    printf(" 8 - Salir\n");
     printf("Seleccione una opcion: ");
 
     do{
         fgets(optc, 10, stdin);
         opt = atoi(optc);
-    }while(opt != 1 && opt != 2 && opt != 3 && opt != 4 && opt != 5);
+    }while(opt != 1 && opt != 2 && opt != 3 && opt != 4 && opt != 5 && opt != 6  && opt != 7  && opt != 8);
     
     bzero(optc, 10);
     bzero(nombreArchivo, sizeof(nombreArchivo));
@@ -304,6 +324,15 @@ int mostrarOpciones(int id){
             listarServidor();
             printf("----------------------------------\n");
             break;
+        case 6:
+            printf("----------- Eliminar archivo --------\n");
+            printf("Ingrese el nombre del archivo a eliminar: ");
+            fgets(nombreArchivo, sizeof(nombreArchivo), stdin);
+            eliminarArchivo(id, nombreArchivo);
+            printf("----------------------------------\n");
+            break;
+        case 8:
+            exit(1);
         default:
             printf("Opcion invalida\n");
             break;
