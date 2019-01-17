@@ -4,3 +4,4 @@ servidor
 cliente
 .DS_Store
 archivos/.DS_Store
+*/*.mp4

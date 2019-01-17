@@ -124,7 +124,7 @@ int recibirArchivo(int id){
                 //printf("%d\n", fr_block_sz);
                 if(fr_block_sz < LENGTH &&  fr_block_sz > 0) break;
                 bzero(revbuf, LENGTH);
-                usleep(10);
+                usleep(100);
             }
             printf("Ok archivo subido!\n");
             fclose(fr);
@@ -152,11 +152,10 @@ int enviarArchivo1(int id){
     //     perror("Error enviado\n");
     // };
 
-    
     return 1;
 }
 
-int enviarArchivo2(int id, char *fs_name, char * temp){
+int enviarArchivo2(int id, char *fs_name, char *temp){
 
     sprintf(fs_name, "./server/%s", temp);
     //char* fs_name = "./client/conest.png";
@@ -184,7 +183,7 @@ int enviarArchivo2(int id, char *fs_name, char * temp){
         //printf(".");
         if(send(id, sdbuf, fs_block_sz, 0) < 0)
         {
-            printf("ERROR: Failed to send file %s.\n", fs_name);
+            printf("ERROR: Failed to send file %s\n", fs_name);
             break;
         }
         bzero(sdbuf, LENGTH);
@@ -202,20 +201,31 @@ void enviarArchivos(int id){
     DIR *d;
     struct dirent *dir;
     d = opendir("./server/");
-    char fs_name[110];
-
+    char fs_name[LENGTH_NAME];
+    bzero(fs_name, LENGTH_NAME);
     if (d)
     {
         while ((dir = readdir(d)) != NULL)
         {
             if(strcmp(dir->d_name, ".") && strcmp(dir->d_name, "..") ){
-
+                printf("%s\n", dir->d_name);
                 //sprintf(fs_name, "./server/%s", dir->d_name);
-                //remove(fs_name);
-                enviarArchivo2(id, fs_name, dir->d_name);
-
+                
+                if(send(id, dir->d_name, sizeof(dir->d_name), 0) < 0) // envio el nombre
+                {
+                    printf("ERROR: Al enviar nombre %s.\n", dir->d_name);
+                    break;
+                }
+                //sleep(1);
+                //enviarArchivo2(id, fs_name, dir->d_name);
+                bzero(fs_name, LENGTH_NAME);
+                //usleep(500);
             }
         }
+        bzero(fs_name, LENGTH_NAME);
+        sprintf(fs_name, "fin");
+        send(id, fs_name, sizeof(fs_name), 0);
+
         closedir(d);
     }
 }
@@ -292,7 +302,7 @@ void *options(void *arg){
             printf("Preparando archivo...\n");
             enviarArchivo1(id);
         }else if(strcmp(buffer, "descargar") == 0){
-            printf("Preparando archivos...\n");
+            printf("Sincronizar archivos...\n");
             enviarArchivos(id);
         }else if(strcmp(buffer, "chat") == 0){
            printf("Chat room...\n");

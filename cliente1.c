@@ -146,7 +146,7 @@ void recibirArchivo(int id, char *nombreArchivo){
                 bzero(revbuf, LENGTH);
                 usleep(10);
             }
-            printf("Ok archivo descargado!\n");
+            printf("Ok %s descargado!\n", temp);
             fclose(fr);
     }
 }
@@ -253,7 +253,7 @@ void eliminarArchivos(){
     DIR *d;
     struct dirent *dir;
     d = opendir("./client1/");
-    char fs_name[110];
+    char fs_name[LENGTH_NAME];
 
     if (d)
     {
@@ -268,6 +268,33 @@ void eliminarArchivos(){
         }
         closedir(d);
     }
+}
+
+void descargarArchivos(int id){
+
+    char revbuf[LENGTH];
+    char temp[LENGTH_NAME];
+    bzero(revbuf, LENGTH);
+    bzero(temp, LENGTH_NAME);
+
+    while(1){
+        
+        if(recv(id, revbuf, LENGTH, 0) < 0){
+            printf("Error\n");
+        }
+        if(strcmp(revbuf,"fin") == 0) break;
+
+        sprintf(temp, "%s\n", revbuf);
+        
+        //printf("por recibir: %s\n",revbuf);
+        recibirArchivo(id, temp);
+        printf("%s recibido\n",revbuf);
+
+        bzero(revbuf, LENGTH);
+        bzero(temp, LENGTH_NAME);
+        //usleep(500);
+    }
+
 }
 
 int mostrarOpciones(int id){
@@ -341,6 +368,7 @@ int mostrarOpciones(int id){
             eliminarArchivos();
             sprintf(optc, "descargar");
             send(id, optc, sizeof(optc), 0); // Enviar opcion
+            descargarArchivos(id);
             break;
         case 8:
             exit(1);
